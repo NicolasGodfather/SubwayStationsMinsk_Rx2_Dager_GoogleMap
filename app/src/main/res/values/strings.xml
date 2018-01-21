@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">SubwayStationsMinsk</string>
+    <string name="title_activity_map">Map</string>
+    <string name="not_support">This device is not supported</string>
+    <string name="gps_request">Чтобы продолжить разрешите устройству определять ваше местоположение.</string>
+    <string name="cancel">Отмена</string>
+    <string name="ok">ОК</string>
+
+    <!--Errors-->
+    <string name="google_map_create_error">Извините, не удалось создать карту</string>
+    <string name="error_sorry">Ошибка, проверьте соединение</string>
+
+</resources>
