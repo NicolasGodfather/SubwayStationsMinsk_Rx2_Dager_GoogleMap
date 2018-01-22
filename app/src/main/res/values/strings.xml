@@ -9,5 +9,7 @@
     <!--Errors-->
     <string name="google_map_create_error">Извините, не удалось создать карту</string>
     <string name="error_sorry">Ошибка, проверьте соединение</string>
+    <string name="error_google_places">Место не найдено</string>
+    <string name="back_double_click">Нажмите еще раз чтобы выйти</string>
 
 </resources>

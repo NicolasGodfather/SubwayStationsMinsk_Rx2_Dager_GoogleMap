@@ -43,8 +43,10 @@ dependencies {
     implementation 'com.android.support.constraint:constraint-layout:1.0.2'
     implementation 'com.android.support:design:26.1.0'
 
-    implementation "com.google.android.gms:play-services-maps:$GOOGLE_SERVICES"
+    implementation 'pl.charmas.android:android-reactive-location2:2.1@aar'
     implementation "com.google.android.gms:play-services-location:$GOOGLE_SERVICES"
+    implementation "com.google.android.gms:play-services-maps:$GOOGLE_SERVICES"
+    implementation "com.google.android.gms:play-services-places:$GOOGLE_SERVICES"
     implementation 'com.google.maps.android:android-maps-utils:0.4.3'
 
     implementation 'com.squareup.retrofit2:retrofit:2.3.0'

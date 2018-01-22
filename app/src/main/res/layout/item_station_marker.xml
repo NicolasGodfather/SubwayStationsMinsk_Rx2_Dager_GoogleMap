@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/frameMarker"
+    android:layout_width="76dp"
+    android:layout_height="50dp">
+
+    <ImageView
+        android:id="@+id/imgMarker"
+        android:layout_width="76dp"
+        android:layout_height="50dp"
+        android:scaleType="fitXY"
+        android:padding="2dp"
+        android:layout_gravity="center"
+        android:src="@drawable/ic_pin" />
+
+    <TextView
+        android:id="@+id/txtLengthWay"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:text="station"
+        android:layout_marginBottom="5dp"
+        android:textColor="@color/purple"
+        android:textSize="10sp"
+        android:textStyle="bold" />
+
+</FrameLayout>

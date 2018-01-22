@@ -26,15 +26,23 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 
-import java.util.List;
+import javax.inject.Inject;
 
+import by.stations.subway.MyApplication;
 import by.stations.subway.R;
+import by.stations.subway.common.StationListHelper;
+import by.stations.subway.rest.MapApi;
+import by.stations.subway.rest.StationApi;
+import io.reactivex.Observable;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.schedulers.Schedulers;
 
 import static by.stations.subway.common.Constants.MY_PERMISSIONS_REQUEST_CODE;
 import static by.stations.subway.common.Permissions.checkLocationPermission;
 import static by.stations.subway.common.Permissions.requestPermission;
 import static by.stations.subway.common.Utils.buildAlertMessageNoGps;
 import static by.stations.subway.common.Utils.checkGps;
+import static by.stations.subway.common.Utils.getDeviceLocation;
 
 public class MapFragment extends Fragment
         implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, View.OnClickListener,
@@ -45,14 +53,26 @@ public class MapFragment extends Fragment
     private static final int UPDATE_INTERVAL = 5000;
     private static final int FATEST_INTERVAL = 3000;
     private static final int DISPLACEMENT = 10;
-    private static final float DEFAULT_ZOOM = 6.0f;
+    private static final float DEFAULT_ZOOM = 11.0f;
 
     private GoogleApiClient mGoogleApiClient;
     private GoogleMap map;
     private LocationRequest mLocationRequest;
     private Location mLastLocation;
-    private List<LatLng> decodedPath;
-    ImageView circleLocation;
+    private ImageView circleLocation;
+
+    @Inject
+    MapApi mapApi;
+    @Inject
+    StationApi stationApi;
+//    @Inject
+//    NetworkManager mNetworkManager;
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        MyApplication.getApplicationComponent().inject(this);
+    }
 
     @Nullable
     @Override
@@ -64,7 +84,6 @@ public class MapFragment extends Fragment
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        circleLocation = view.findViewById(R.id.circleLocation);
         SupportMapFragment supportMapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map);
         try {
             supportMapFragment.getMapAsync(this);
@@ -73,17 +92,10 @@ public class MapFragment extends Fragment
                 Log.e(TAG, "MapPresenter: " + getResources().getString(R.string.google_map_create_error));
             }
         }
+
+        circleLocation = view.findViewById(R.id.circleLocation);
         circleLocation.setOnClickListener(this);
         createLocationRequest();
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
-            mGoogleApiClient.stopAutoManage(getActivity());
-            mGoogleApiClient.disconnect();
-        }
     }
 
     @Override
@@ -201,6 +213,7 @@ public class MapFragment extends Fragment
             map.setMyLocationEnabled(true);
             LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
             displayLocation();
+            getStations();
         }
     }
 
@@ -221,10 +234,23 @@ public class MapFragment extends Fragment
     @Override
     public void onClick(View v) {
         setUpLocation();
+        getDeviceLocation(map, getActivity());
+    }
+
+    public void getStations() {
+        stationApi.getStations()
+                .flatMap(Observable::just)        //get list from response
+                .flatMapIterable(list -> list)    //make the list iterable
+                .toList()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        dataResponse -> StationListHelper.getStationList(dataResponse, map, getActivity()),
+                        error -> Log.e(TAG, "Got Error:" + error)
+                );
     }
 
    /*
-    public void onRoutesDownloaded(RoutesResponse response) {
         if (mView != null) {
             String points = response.getRoutes().get(0).getOverviewPolyline().getPoints();
             decodedPath = PolyUtil.decode(points);
@@ -237,5 +263,5 @@ public class MapFragment extends Fragment
             map.addPolyline(polyline);
             getAllCargo();
         }
-    }*/
+    */
 }

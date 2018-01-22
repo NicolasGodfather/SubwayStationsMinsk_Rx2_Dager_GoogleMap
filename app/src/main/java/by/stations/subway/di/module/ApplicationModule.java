@@ -10,7 +10,6 @@ import javax.inject.Singleton;
 import dagger.Module;
 import dagger.Provides;
 
-// for present context
 @Module // dependency provider class
 public class ApplicationModule {
 

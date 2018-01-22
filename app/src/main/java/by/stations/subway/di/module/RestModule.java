@@ -29,7 +29,7 @@ public class RestModule {
     @Provides
     @Singleton
     public MapApi provideMapApi() {
-        return restClient.createService(MapApi.class);
+        return restClientMaps.createService(MapApi.class);
     }
 
 }
