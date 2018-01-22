@@ -19,12 +19,9 @@ import static by.stations.subway.common.Utils.replaceSpace;
 public class StationMarkerView {
 
     private Activity activity;
-    private GoogleMap map;
     private Bitmap icon;
-    private FrameLayout.LayoutParams layoutParams;
 
-    public StationMarkerView(Activity activity, GoogleMap map, String station) {
-        this.map = map;
+    public StationMarkerView(Activity activity, String station) {
         this.activity = activity;
         if (activity.getApplicationContext() != null) {
             IconGenerator mIconGenerator = new IconGenerator(activity.getApplicationContext());
@@ -37,7 +34,7 @@ public class StationMarkerView {
     private View getView(String distance) {
         View markerView = activity.getLayoutInflater().inflate(R.layout.item_station_marker, null);
         TextView txtLengthWay = markerView.findViewById(R.id.txtLengthWay);
-        layoutParams = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
+        FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
         layoutParams.gravity = CENTER;
         txtLengthWay.setText(replaceSpace(distance));
         return markerView;

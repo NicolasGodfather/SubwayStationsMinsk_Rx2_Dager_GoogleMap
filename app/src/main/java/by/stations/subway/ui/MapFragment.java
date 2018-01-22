@@ -12,10 +12,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationListener;
@@ -27,6 +25,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.tasks.Task;
 
 import javax.inject.Inject;
@@ -40,38 +39,39 @@ import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
 
+import static by.stations.subway.common.Constants.DEFAULT_ZOOM;
+import static by.stations.subway.common.Constants.DISPLACEMENT;
+import static by.stations.subway.common.Constants.FATEST_INTERVAL;
 import static by.stations.subway.common.Constants.MINSK_CITY;
 import static by.stations.subway.common.Constants.MY_PERMISSIONS_REQUEST_CODE;
+import static by.stations.subway.common.Constants.UPDATE_INTERVAL;
 import static by.stations.subway.common.Constants.ZOOM_CITY;
 import static by.stations.subway.common.Permissions.checkLocationPermission;
 import static by.stations.subway.common.Permissions.requestPermission;
 import static by.stations.subway.common.Utils.buildAlertMessageNoGps;
 import static by.stations.subway.common.Utils.checkGps;
+import static by.stations.subway.common.Utils.checkPlayServices;
+import static by.stations.subway.common.Utils.isOnline;
+import static by.stations.subway.common.Utils.showToast;
 
 public class MapFragment extends Fragment
         implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, View.OnClickListener,
         GoogleApiClient.OnConnectionFailedListener, LocationListener, GoogleMap.OnMarkerClickListener {
 
     public static final String TAG = MainActivity.class.getSimpleName();
-    private static final int PLAY_PERMISSIONS_RES_REQUEST = 7001;
-    private static final int UPDATE_INTERVAL = 5000;
-    private static final int FATEST_INTERVAL = 3000;
-    private static final int DISPLACEMENT = 10;
-    private static final float DEFAULT_ZOOM = 11.0f;
+
 
     private GoogleApiClient mGoogleApiClient;
     private GoogleMap map;
     private LocationRequest mLocationRequest;
     private Location mLastLocation;
     private ImageView circleLocation;
-
+    private Polyline polyline;
     @Inject
     MapApi mapApi;
     @Inject
     StationApi stationApi;
     private boolean isClickLocation;
-//    @Inject
-//    NetworkManager mNetworkManager;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -109,7 +109,7 @@ public class MapFragment extends Fragment
         switch (requestCode) {
             case MY_PERMISSIONS_REQUEST_CODE: {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    if (checkPlayServices()) {
+                    if (checkPlayServices(getActivity())) {
                         buildGoogleApiClient();
                     }
                 }
@@ -121,7 +121,7 @@ public class MapFragment extends Fragment
         if (!checkLocationPermission(getActivity())) {
             requestPermission(getActivity());
         } else {
-            if (checkGps(getActivity()) && checkPlayServices()) {
+            if (checkGps(getActivity()) && checkPlayServices(getActivity())) {
                 buildGoogleApiClient();
                 if (isClickLocation) {
                     getDeviceLocation(map, getActivity());
@@ -151,23 +151,6 @@ public class MapFragment extends Fragment
         } catch (SecurityException e) {
             Log.e("Exception: %s", e.getMessage());
         }
-    }
-
-    public void showError(int text) {
-        Toast.makeText(getActivity(), getResources().getString(text), Toast.LENGTH_SHORT).show();
-    }
-
-    public boolean checkPlayServices() {
-        int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(getActivity());
-        if (resultCode != ConnectionResult.SUCCESS) {
-            if (GooglePlayServicesUtil.isUserRecoverableError(resultCode)) {
-                GooglePlayServicesUtil.getErrorDialog(resultCode, getActivity(), PLAY_PERMISSIONS_RES_REQUEST).show();
-            } else {
-                showError(R.string.not_support);
-            }
-            return false;
-        }
-        return true;
     }
 
     public void buildGoogleApiClient() {
@@ -206,7 +189,7 @@ public class MapFragment extends Fragment
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-        showError(R.string.error_sorry);
+        showToast(R.string.error_sorry, getActivity());
     }
 
     public void createLocationRequest() {
@@ -252,12 +235,6 @@ public class MapFragment extends Fragment
         }
     }
 
-    @Override
-    public void onClick(View v) {
-        isClickLocation = true;
-        setUpLocation();
-    }
-
     public void getStations() {
         stationApi.getStations()
                 .flatMap(Observable::just)        //get list from response
@@ -272,14 +249,31 @@ public class MapFragment extends Fragment
     }
 
     @Override
-    public boolean onMarkerClick(Marker marker) {
-        Integer clickCount = (Integer) marker.getTag();
-        if (clickCount != null) {
-            String departure = String.valueOf(mLastLocation.getLatitude() + "," + mLastLocation.getLongitude());
-            String arrival = String.valueOf(marker.getPosition().latitude + "," + marker.getPosition().longitude);
-            String key = getResources().getString(R.string.google_maps_key);
+    public void onClick(View v) {
+        if (isOnline(getActivity())) {
+            isClickLocation = true;
+            setUpLocation();
+        } else {
+            showToast(R.string.error_connection, getActivity());
+        }
+    }
 
-            createRoute(departure, arrival, key);
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        if (isOnline(getActivity())) {
+            Integer clickCount = (Integer) marker.getTag();
+            if (clickCount != null) {
+                String departure = String.valueOf(mLastLocation.getLatitude() + "," + mLastLocation.getLongitude());
+                String arrival = String.valueOf(marker.getPosition().latitude + "," + marker.getPosition().longitude);
+                String key = getResources().getString(R.string.google_maps_key);
+
+                if (polyline != null) {
+                    polyline.remove(); // for delete previous route
+                }
+                createRoute(departure, arrival, key);
+            }
+        } else {
+            showToast(R.string.error_connection, getActivity());
         }
         return true; // true - not display place name
     }
@@ -289,7 +283,7 @@ public class MapFragment extends Fragment
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        response -> MapHelper.createRoute(response,map, getActivity()),
+                        response -> polyline = MapHelper.createRoute(response, map, getActivity()),
                         error -> Log.e(TAG, "Got Error:" + error)
                 );
     }

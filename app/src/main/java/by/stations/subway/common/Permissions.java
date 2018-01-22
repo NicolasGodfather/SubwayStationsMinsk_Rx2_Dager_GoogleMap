@@ -23,14 +23,4 @@ public class Permissions {
         }, MY_PERMISSIONS_REQUEST_CODE);
     }
 
-  /*  public static boolean checkLocationPermission(Activity activity) {
-        RxPermissions rxPermissions = new RxPermissions(activity);
-        rxPermissions.request(
-                Manifest.permission.ACCESS_COARSE_LOCATION,
-                Manifest.permission.ACCESS_FINE_LOCATION)
-                .subscribe();
-        return rxPermissions.isGranted(Manifest.permission.ACCESS_FINE_LOCATION) &&
-                rxPermissions.isGranted(Manifest.permission.ACCESS_COARSE_LOCATION);
-    }*/
-
 }

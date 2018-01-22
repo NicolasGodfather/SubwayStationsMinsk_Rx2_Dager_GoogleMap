@@ -43,6 +43,7 @@ dependencies {
     implementation 'com.android.support.constraint:constraint-layout:1.0.2'
     implementation 'com.android.support:design:26.1.0'
 
+    implementation 'com.github.pwittchen:reactivenetwork-rx2:0.12.3'
     implementation 'com.tbruyelle.rxpermissions2:rxpermissions:0.9.5@aar'
     implementation 'pl.charmas.android:android-reactive-location2:2.1@aar'
     implementation "com.google.android.gms:play-services-location:$GOOGLE_SERVICES"

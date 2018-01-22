@@ -8,6 +8,7 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.maps.android.PolyUtil;
 
@@ -24,7 +25,7 @@ public class MapHelper {
     public static List<Station> getStationList(List<Station> response, GoogleMap map, Activity activity) {
         List<Station> stationList = new ArrayList<>(response);
         for (Station station : stationList) {
-            StationMarkerView cargoMarkerView = new StationMarkerView(activity, map, station.getName());
+            StationMarkerView cargoMarkerView = new StationMarkerView(activity, station.getName());
             Marker marker = map.addMarker(new MarkerOptions()
                             .position(new LatLng(station.getLatitude(), station.getLongitude()))
 //                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)) // default icon with changed color
@@ -36,10 +37,10 @@ public class MapHelper {
         return stationList;
     }
 
-    public static void createRoute(RoutesResponse response, GoogleMap map, Activity activity) {
+    public static Polyline createRoute(RoutesResponse response, GoogleMap map, Activity activity) {
         String points = response.getRoutes().get(0).getOverviewPolyline().getPoints();
         List<LatLng> decodedPath = PolyUtil.decode(points);
-        PolylineOptions polyline = new PolylineOptions()
+        PolylineOptions polylineOptions = new PolylineOptions()
                 .addAll(decodedPath)
                 .color(activity.getResources().getColor(R.color.colorPrimary));
         double lat = (response.getRoutes().get(0).getLegs().get(0).getStartLocation().getLat() +
@@ -47,9 +48,9 @@ public class MapHelper {
         double lon = (response.getRoutes().get(0).getLegs().get(0).getStartLocation().getLng() +
                 response.getRoutes().get(0).getLegs().get(0).getEndLocation().getLng()) / 2;
         map.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, lon), 12));
-        map.addPolyline(polyline);
-        map.addMarker(new MarkerOptions()
-                .position(decodedPath.get(decodedPath.size() - 1)));
+        Polyline polyline = map.addPolyline(polylineOptions);
+        map.addMarker(new MarkerOptions().position(decodedPath.get(decodedPath.size() - 1)));
+        return polyline;
     }
 
 }

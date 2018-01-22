@@ -14,11 +14,37 @@ import android.support.annotation.StringRes;
 import android.view.ContextThemeWrapper;
 import android.widget.Toast;
 
-import com.google.android.gms.maps.model.LatLng;
+import com.github.pwittchen.reactivenetwork.library.rx2.ReactiveNetwork;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesUtil;
 
 import by.stations.subway.R;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
+
+import static by.stations.subway.common.Constants.PLAY_PERMISSIONS_RES_REQUEST;
+
 
 public class Utils {
+
+    public static Disposable startNetworkObservable(Activity activity) {
+        return ReactiveNetwork.observeInternetConnectivity()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(isConnectedToInternet -> {
+                    if (!isConnectedToInternet) {
+                        showToast(R.string.error_connection, activity);
+                    } else {
+                        showToast(R.string.success_connection, activity);
+                    }
+                });
+    }
+
+    public static boolean checkGps(Activity activity) {
+        final LocationManager manager = (LocationManager) activity.getSystemService(Context.LOCATION_SERVICE);
+        return !(manager != null && !manager.isProviderEnabled(LocationManager.GPS_PROVIDER));
+    }
 
     public static boolean isOnline(Context context) {
         ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -29,9 +55,17 @@ public class Utils {
         return ((networkInfo != null && networkInfo.isConnected()));
     }
 
-    public static boolean checkGps(Activity activity) {
-        final LocationManager manager = (LocationManager) activity.getSystemService(Context.LOCATION_SERVICE);
-        return !(manager != null && !manager.isProviderEnabled(LocationManager.GPS_PROVIDER));
+    public static boolean checkPlayServices(Activity activity) {
+        int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(activity);
+        if (resultCode != ConnectionResult.SUCCESS) {
+            if (GooglePlayServicesUtil.isUserRecoverableError(resultCode)) {
+                GooglePlayServicesUtil.getErrorDialog(resultCode, activity, PLAY_PERMISSIONS_RES_REQUEST).show();
+            } else {
+                showToast(R.string.not_support, activity);
+            }
+            return false;
+        }
+        return true;
     }
 
     public static void buildAlertMessageNoGps(Activity activity, Context context) {
@@ -54,7 +88,7 @@ public class Utils {
         Toast toast = Toast.makeText(context, context.getText(message), Toast.LENGTH_SHORT);
         toast.show();
         Handler handler = new Handler();
-        handler.postDelayed(toast::cancel, 1000);
+        handler.postDelayed(toast::cancel, 3000);
     }
 
     public static String replaceSpace(String line) {

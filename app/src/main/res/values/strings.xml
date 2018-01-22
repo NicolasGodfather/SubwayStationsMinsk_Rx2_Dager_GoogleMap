@@ -5,11 +5,13 @@
     <string name="gps_request">Чтобы продолжить разрешите устройству определять ваше местоположение.</string>
     <string name="cancel">Отмена</string>
     <string name="ok">ОК</string>
+    <string name="back_double_click">Нажмите еще раз чтобы выйти</string>
+    <string name="success_connection">Соединение успешно установлено</string>
 
     <!--Errors-->
     <string name="google_map_create_error">Извините, не удалось создать карту</string>
     <string name="error_sorry">Ошибка, проверьте соединение</string>
+    <string name="error_connection">Проверьте ваше соединение</string>
     <string name="error_google_places">Место не найдено</string>
-    <string name="back_double_click">Нажмите еще раз чтобы выйти</string>
 
 </resources>
