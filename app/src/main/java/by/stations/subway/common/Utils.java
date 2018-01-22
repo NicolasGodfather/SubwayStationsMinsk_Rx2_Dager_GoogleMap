@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
-import android.location.Location;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -12,24 +11,14 @@ import android.os.Build;
 import android.os.Handler;
 import android.provider.Settings;
 import android.support.annotation.StringRes;
-import android.util.Log;
 import android.view.ContextThemeWrapper;
 import android.widget.Toast;
 
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.tasks.Task;
 
 import by.stations.subway.R;
 
 public class Utils {
-
-    private final static LatLng MINSK_CITY = new LatLng(53.9, 27.56667);
-    public static final String TAG = Utils.class.getSimpleName();
-    private static final int DEFAULT_ZOOM = 13;
 
     public static boolean isOnline(Context context) {
         ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -68,33 +57,9 @@ public class Utils {
         handler.postDelayed(toast::cancel, 1000);
     }
 
-
-    public static void getDeviceLocation(GoogleMap map, Context context) {
-        try {
-            FusedLocationProviderClient mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context);
-            Task<Location> locationResult = mFusedLocationProviderClient.getLastLocation();
-            locationResult.addOnCompleteListener(task -> {
-                if (task.isSuccessful()) {
-                    // Set the map's camera position to the current location of the device.
-                    final Location mLastKnownLocation = task.getResult();
-                    map.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                            new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude()), DEFAULT_ZOOM));
-                } else {
-                    Log.d(TAG, "Current location is null. Using defaults.");
-                    Log.e(TAG, "Exception: %s", task.getException());
-                    map.moveCamera(CameraUpdateFactory.newLatLngZoom(MINSK_CITY, DEFAULT_ZOOM));
-                    map.getUiSettings().setMyLocationButtonEnabled(false);
-                }
-            });
-        } catch (SecurityException e) {
-            Log.e("Exception: %s", e.getMessage());
-        }
-    }
-
     public static String replaceSpace(String line) {
         return line.replace(" ", "\n");
     }
-
 
     public static void shutDownApp(Activity activity) {
         Intent homeIntent = new Intent(Intent.ACTION_MAIN);

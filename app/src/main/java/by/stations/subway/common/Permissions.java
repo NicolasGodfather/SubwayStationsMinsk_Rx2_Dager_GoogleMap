@@ -19,9 +19,18 @@ public class Permissions {
 
     public static void requestPermission(Activity activity) {
         ActivityCompat.requestPermissions(activity, new String[]{
-                Manifest.permission.ACCESS_COARSE_LOCATION,
-                Manifest.permission.ACCESS_FINE_LOCATION
+                Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION
         }, MY_PERMISSIONS_REQUEST_CODE);
     }
+
+  /*  public static boolean checkLocationPermission(Activity activity) {
+        RxPermissions rxPermissions = new RxPermissions(activity);
+        rxPermissions.request(
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_FINE_LOCATION)
+                .subscribe();
+        return rxPermissions.isGranted(Manifest.permission.ACCESS_FINE_LOCATION) &&
+                rxPermissions.isGranted(Manifest.permission.ACCESS_COARSE_LOCATION);
+    }*/
 
 }

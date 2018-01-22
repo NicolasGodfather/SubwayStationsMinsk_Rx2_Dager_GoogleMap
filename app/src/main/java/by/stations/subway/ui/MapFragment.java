@@ -1,5 +1,6 @@
 package by.stations.subway.ui;
 
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
@@ -16,6 +17,7 @@ import android.widget.Toast;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
@@ -25,24 +27,26 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.tasks.Task;
 
 import javax.inject.Inject;
 
 import by.stations.subway.MyApplication;
 import by.stations.subway.R;
-import by.stations.subway.common.StationListHelper;
+import by.stations.subway.common.MapHelper;
 import by.stations.subway.rest.MapApi;
 import by.stations.subway.rest.StationApi;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
 
+import static by.stations.subway.common.Constants.MINSK_CITY;
 import static by.stations.subway.common.Constants.MY_PERMISSIONS_REQUEST_CODE;
+import static by.stations.subway.common.Constants.ZOOM_CITY;
 import static by.stations.subway.common.Permissions.checkLocationPermission;
 import static by.stations.subway.common.Permissions.requestPermission;
 import static by.stations.subway.common.Utils.buildAlertMessageNoGps;
 import static by.stations.subway.common.Utils.checkGps;
-import static by.stations.subway.common.Utils.getDeviceLocation;
 
 public class MapFragment extends Fragment
         implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, View.OnClickListener,
@@ -65,6 +69,7 @@ public class MapFragment extends Fragment
     MapApi mapApi;
     @Inject
     StationApi stationApi;
+    private boolean isClickLocation;
 //    @Inject
 //    NetworkManager mNetworkManager;
 
@@ -116,13 +121,35 @@ public class MapFragment extends Fragment
         if (!checkLocationPermission(getActivity())) {
             requestPermission(getActivity());
         } else {
-            if (checkGps(getActivity())) {
-                if (checkPlayServices()) {
-                    buildGoogleApiClient();
+            if (checkGps(getActivity()) && checkPlayServices()) {
+                buildGoogleApiClient();
+                if (isClickLocation) {
+                    getDeviceLocation(map, getActivity());
                 }
             } else {
                 buildAlertMessageNoGps(getActivity(), getActivity());
             }
+        }
+    }
+
+    public void getDeviceLocation(GoogleMap map, Context context) {
+        isClickLocation = false;
+        try {
+            FusedLocationProviderClient mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context);
+            Task<Location> locationResult = mFusedLocationProviderClient.getLastLocation();
+            locationResult.addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
+                    final Location mLastKnownLocation = task.getResult();
+                    map.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                            new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude()), ZOOM_CITY));
+                } else {
+                    Log.e(TAG, "Exception: %s", task.getException());
+                    map.moveCamera(CameraUpdateFactory.newLatLngZoom(MINSK_CITY, ZOOM_CITY));
+                    map.getUiSettings().setMyLocationButtonEnabled(false);
+                }
+            });
+        } catch (SecurityException e) {
+            Log.e("Exception: %s", e.getMessage());
         }
     }
 
@@ -182,12 +209,6 @@ public class MapFragment extends Fragment
         showError(R.string.error_sorry);
     }
 
-    @Override
-    public boolean onMarkerClick(Marker marker) {
-        // todo logic to make route
-        return true;
-    }
-
     public void createLocationRequest() {
         mLocationRequest = new LocationRequest();
         mLocationRequest.setInterval(UPDATE_INTERVAL);
@@ -233,8 +254,8 @@ public class MapFragment extends Fragment
 
     @Override
     public void onClick(View v) {
+        isClickLocation = true;
         setUpLocation();
-        getDeviceLocation(map, getActivity());
     }
 
     public void getStations() {
@@ -245,23 +266,32 @@ public class MapFragment extends Fragment
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        dataResponse -> StationListHelper.getStationList(dataResponse, map, getActivity()),
+                        dataResponse -> MapHelper.getStationList(dataResponse, map, getActivity()),
                         error -> Log.e(TAG, "Got Error:" + error)
                 );
     }
 
-   /*
-        if (mView != null) {
-            String points = response.getRoutes().get(0).getOverviewPolyline().getPoints();
-            decodedPath = PolyUtil.decode(points);
-            CustomCap cap = new CustomCap(
-                    BitmapDescriptorFactory.fromResource(R.drawable.ic_my_route_end), 10);
-            PolylineOptions polyline = new PolylineOptions()
-                    .addAll(decodedPath)
-                    .color(mView.getActivity().getResources().getColor(R.color.active_orange))
-                    .endCap(cap);
-            map.addPolyline(polyline);
-            getAllCargo();
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        Integer clickCount = (Integer) marker.getTag();
+        if (clickCount != null) {
+            String departure = String.valueOf(mLastLocation.getLatitude() + "," + mLastLocation.getLongitude());
+            String arrival = String.valueOf(marker.getPosition().latitude + "," + marker.getPosition().longitude);
+            String key = getResources().getString(R.string.google_maps_key);
+
+            createRoute(departure, arrival, key);
         }
-    */
+        return true; // true - not display place name
+    }
+
+    private void createRoute(String departure, String arrival, String key) {
+        mapApi.getMapRoute(departure, arrival, key)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        response -> MapHelper.createRoute(response,map, getActivity()),
+                        error -> Log.e(TAG, "Got Error:" + error)
+                );
+    }
+
 }
