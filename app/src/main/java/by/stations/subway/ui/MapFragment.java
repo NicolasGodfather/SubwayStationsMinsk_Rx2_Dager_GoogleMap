@@ -239,7 +239,7 @@ public class MapFragment extends Fragment
         stationApi.getStations()
                 .flatMap(Observable::just)        //get list from response
                 .flatMapIterable(list -> list)    //make the list iterable
-                .filter(v -> v.getLongitude() != 0 || v.getLatitude() != 0) // pass all pin that coordinates != 0
+                .filter(v -> v.getLongitude() != 0 || v.getLatitude() != 0 || !v.getName().equals("error")) // pass all pin that coordinates != 0
                 .doOnNext(v -> Log.d(TAG, "station name: " + v.getName()))
                 .toList()
                 .subscribeOn(Schedulers.io())
