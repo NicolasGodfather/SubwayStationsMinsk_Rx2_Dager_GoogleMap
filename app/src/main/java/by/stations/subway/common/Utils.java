@@ -1,9 +1,11 @@
 package by.stations.subway.common;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -11,6 +13,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.provider.Settings;
 import android.support.annotation.StringRes;
+import android.support.v4.app.ActivityCompat;
 import android.view.ContextThemeWrapper;
 import android.widget.Toast;
 
@@ -39,6 +42,13 @@ public class Utils {
                         showToast(R.string.success_connection, activity);
                     }
                 });
+    }
+
+    public static boolean hasLocationPermission(Activity activity) {
+        return ActivityCompat.checkSelfPermission(activity,
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(activity,
+                Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
     }
 
     public static boolean checkGps(Activity activity) {

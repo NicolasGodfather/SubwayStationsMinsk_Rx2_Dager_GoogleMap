@@ -1,7 +1,8 @@
 package by.stations.subway.ui;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -27,6 +28,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.tasks.Task;
+import com.tbruyelle.rxpermissions2.RxPermissions;
 
 import javax.inject.Inject;
 
@@ -43,23 +45,22 @@ import static by.stations.subway.common.Constants.DEFAULT_ZOOM;
 import static by.stations.subway.common.Constants.DISPLACEMENT;
 import static by.stations.subway.common.Constants.FATEST_INTERVAL;
 import static by.stations.subway.common.Constants.MINSK_CITY;
-import static by.stations.subway.common.Constants.MY_PERMISSIONS_REQUEST_CODE;
 import static by.stations.subway.common.Constants.UPDATE_INTERVAL;
 import static by.stations.subway.common.Constants.ZOOM_CITY;
-import static by.stations.subway.common.Permissions.checkLocationPermission;
-import static by.stations.subway.common.Permissions.requestPermission;
 import static by.stations.subway.common.Utils.buildAlertMessageNoGps;
 import static by.stations.subway.common.Utils.checkGps;
+import static by.stations.subway.common.Utils.hasLocationPermission;
 import static by.stations.subway.common.Utils.checkPlayServices;
 import static by.stations.subway.common.Utils.isOnline;
 import static by.stations.subway.common.Utils.showToast;
+
 
 public class MapFragment extends Fragment
         implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, View.OnClickListener,
         GoogleApiClient.OnConnectionFailedListener, LocationListener, GoogleMap.OnMarkerClickListener {
 
     public static final String TAG = MainActivity.class.getSimpleName();
-
+    public static int permissionCounter = 0;
 
     private GoogleApiClient mGoogleApiClient;
     private GoogleMap map;
@@ -103,23 +104,9 @@ public class MapFragment extends Fragment
         createLocationRequest();
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        switch (requestCode) {
-            case MY_PERMISSIONS_REQUEST_CODE: {
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    if (checkPlayServices(getActivity())) {
-                        buildGoogleApiClient();
-                    }
-                }
-            }
-        }
-    }
-
     public void setUpLocation() {
-        if (!checkLocationPermission(getActivity())) {
-            requestPermission(getActivity());
+        if (!hasLocationPermission(getActivity())) {
+            requestRxPermission();
         } else {
             if (checkGps(getActivity()) && checkPlayServices(getActivity())) {
                 buildGoogleApiClient();
@@ -162,6 +149,22 @@ public class MapFragment extends Fragment
         mGoogleApiClient.connect();
     }
 
+    public void requestRxPermission() {
+        RxPermissions rxPermissions = new RxPermissions(getActivity());
+        rxPermissions.requestEach(Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION)
+                .subscribe(permission -> { // will emit 2 Permission objects
+                    if (permission.granted) {
+                        permissionCounter++;
+                    }
+                    if (permissionCounter == 2) { // check ensures build only 1 api client, help avoid crash when creating 2 map
+                        if (checkPlayServices(getActivity())) {
+                            buildGoogleApiClient();
+                        }
+                    }
+                }, throwable -> Log.e("TAG", "onError," + throwable.getMessage()));
+    }
+
     @Override
     public void onMapReady(GoogleMap googleMap) {
         map = googleMap;
@@ -193,6 +196,8 @@ public class MapFragment extends Fragment
     }
 
     public void createLocationRequest() {
+
+        
         mLocationRequest = new LocationRequest();
         mLocationRequest.setInterval(UPDATE_INTERVAL);
         mLocationRequest.setFastestInterval(FATEST_INTERVAL);
@@ -201,11 +206,12 @@ public class MapFragment extends Fragment
         startLocationUpdates();
     }
 
+    @SuppressLint("MissingPermission")
     private void startLocationUpdates() {
         if (map == null) {
             Log.e(TAG, "MapPresenter: " + getResources().getString(R.string.google_map_create_error));
         } else {
-            if (!checkLocationPermission(getActivity())) {
+            if (!hasLocationPermission(getActivity())) {
                 return;
             }
             map.getUiSettings().setZoomControlsEnabled(false);
@@ -221,8 +227,9 @@ public class MapFragment extends Fragment
         }
     }
 
+    @SuppressLint("MissingPermission")
     private void displayLocation() {
-        if (!checkLocationPermission(getActivity())) {
+        if (!hasLocationPermission(getActivity())) {
             return;
         }
         mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
