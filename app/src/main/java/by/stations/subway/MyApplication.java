@@ -3,6 +3,9 @@ package by.stations.subway;
 import android.app.Application;
 import android.content.Context;
 
+import com.squareup.leakcanary.LeakCanary;
+import com.squareup.leakcanary.RefWatcher;
+
 import javax.inject.Inject;
 
 import by.stations.subway.di.ApplicationComponent;
@@ -14,6 +17,7 @@ public class MyApplication extends Application{
     private static ApplicationComponent applicationComponent;
     @Inject
     Context context;
+    private static RefWatcher refWatcher;
 
     Context getAppContext() {
         return context;
@@ -24,6 +28,12 @@ public class MyApplication extends Application{
         super.onCreate();
 
         initComponent();
+
+        refWatcher = LeakCanary.install(this);
+    }
+
+    public static RefWatcher getRefWatcher() {
+        return refWatcher;
     }
 
     private void initComponent() {

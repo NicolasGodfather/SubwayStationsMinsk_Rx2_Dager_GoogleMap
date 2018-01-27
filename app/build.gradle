@@ -33,7 +33,6 @@ android {
     }
 }
 
-def VERSION_MOXY = "1.5.3"
 def GOOGLE_SERVICES = "11.8.0"
 
 dependencies {
@@ -45,7 +44,7 @@ dependencies {
 
     implementation 'com.github.pwittchen:reactivenetwork-rx2:0.12.3'
     implementation 'com.tbruyelle.rxpermissions2:rxpermissions:0.9.5@aar'
-    implementation 'pl.charmas.android:android-reactive-location2:2.1@aar'
+    implementation 'com.patloew.rxlocation:rxlocation:1.0.4'
     implementation "com.google.android.gms:play-services-location:$GOOGLE_SERVICES"
     implementation "com.google.android.gms:play-services-maps:$GOOGLE_SERVICES"
     implementation "com.google.android.gms:play-services-places:$GOOGLE_SERVICES"
@@ -61,10 +60,8 @@ dependencies {
     implementation 'io.reactivex.rxjava2:rxandroid:2.0.1'
     implementation 'io.reactivex.rxjava2:rxjava:2.1.2'
 
-    implementation "com.arello-mobile:moxy:$VERSION_MOXY"
-    implementation "com.arello-mobile:moxy-android:$VERSION_MOXY"
-    implementation "com.arello-mobile:moxy-app-compat:$VERSION_MOXY"
-    annotationProcessor "com.arello-mobile:moxy-compiler:$VERSION_MOXY"
+    debugCompile 'com.squareup.leakcanary:leakcanary-android:1.5.4'
+    releaseCompile 'com.squareup.leakcanary:leakcanary-android-no-op:1.5.4'
 
     implementation 'com.google.dagger:dagger:2.12'
     annotationProcessor 'com.google.dagger:dagger-compiler:2.12'

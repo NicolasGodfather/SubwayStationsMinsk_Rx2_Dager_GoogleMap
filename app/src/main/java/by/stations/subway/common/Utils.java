@@ -26,7 +26,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 
-import static by.stations.subway.common.Constants.PLAY_PERMISSIONS_RES_REQUEST;
+import static by.stations.subway.common.Constants.PLAY_REQUEST;
 
 
 public class Utils {
@@ -69,7 +69,7 @@ public class Utils {
         int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(activity);
         if (resultCode != ConnectionResult.SUCCESS) {
             if (GooglePlayServicesUtil.isUserRecoverableError(resultCode)) {
-                GooglePlayServicesUtil.getErrorDialog(resultCode, activity, PLAY_PERMISSIONS_RES_REQUEST).show();
+                GooglePlayServicesUtil.getErrorDialog(resultCode, activity, PLAY_REQUEST).show();
             } else {
                 showToast(R.string.not_support, activity);
             }
