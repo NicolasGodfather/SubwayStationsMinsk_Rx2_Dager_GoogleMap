@@ -133,32 +133,25 @@ public class MapPresenter implements OnMapReadyCallback, GoogleApiClient.Connect
     private void updateCurrentLocation(float zoom) {
         disposable.add(rxLocation.location().updates(locationRequest)
                 .flatMap(location -> rxLocation.location().lastLocation().toObservable())
+                .filter(location1 -> rxLocation != null)
                 .subscribe(location -> {
                     this.location = location;
-                    displayLocation(location, zoom);
+                    if (!hasLocationPermission(view.getActivity())) {
+                        return;
+                    }
+                    final double latitude = location.getLatitude();
+                    final double longitude = location.getLongitude();
+                    map.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), zoom));
                     getStations();
                 })
         );
-    }
-
-    private void displayLocation(Location location, float zoom) {
-        if (!hasLocationPermission(view.getActivity())) {
-            return;
-        }
-        if (rxLocation != null) {
-            final double latitude = location.getLatitude();
-            final double longitude = location.getLongitude();
-            map.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), zoom));
-        } else {
-            Log.d("ERROR", "Cannot get your location");
-        }
     }
 
     public void getStations() {
         stationApi.getStations()
                 .flatMap(Observable::just)        //get list from response
                 .flatMapIterable(list -> list)    //make the list iterable
-                .filter(v -> v.getLongitude() != 0 || v.getLatitude() != 0 || !v.getName().equals("error")) // pass all pin that coordinates != 0
+                .filter(v -> v.getLongitude() != 0 || v.getLatitude() != 0) // pass all pin that coordinates != 0
                 .toList()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -185,7 +178,7 @@ public class MapPresenter implements OnMapReadyCallback, GoogleApiClient.Connect
         if (view != null) {
             if (isOnline(view.getActivity())) {
                 Integer clickCount = (Integer) marker.getTag();
-                if (clickCount != null) {
+                if (clickCount != null && location != null) {
                     String departure = String.valueOf(location.getLatitude() + "," + location.getLongitude());
                     String arrival = String.valueOf(marker.getPosition().latitude + "," + marker.getPosition().longitude);
                     String key = view.getActivity().getResources().getString(R.string.google_maps_key);
